@@ -1,0 +1,9 @@
+The first thing that is apparent is that the number of instructions emitted has been reduced by 10%. This is because many unneeded instructions (conversions from char/shorts to int) were eliminated by the new machine description.
+
+The second important fact is that the program is using the registers much more evenly, especially ‘cheap’ ones like EDX, ECX, that need not to be saved when they are used.
+
+Register allocation now uses automatic register variables. Before code generation, the optimizer looks for the best three variables to put into EBX, ESI, and EDI. To do that, it analyzes the hints about the code in the function left by the parser and the node construction function ‘labelnodes’ (in dag.c) to determine how many registers can be allocated. The code generator and register allocator works now with only three free registers in some situations. 
+
+Spills have not increased though, a big fear I had when embarking into the construction of the optimizer. This is due in part to the elimination of unnecessary conversions that now save a register when one was being wasted before.
+
+Since the x86 instruction set has many ‘special features’, they have to be considered when allocating registers. Big troubles are those instructions that accept their inputs in fixed registers, and clobber them: I mean for instance the block-move instructions, that destroy ESI and EDI, and use up ECX to hold the repeat count. For the time being the compiler will NOT optimize any function that contains this instructions, to avoid generating wrong code in some cases. Since these instructions are not very frequent, this doesn’t hamper the optimization process as a whole.
